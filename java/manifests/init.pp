@@ -19,8 +19,7 @@ class java inherits java::params {
                 command => "/bin/tar -xzvf jdk${java::params::java_version}.tar.gz",
                 cwd     => "${java::params::java_base}",
                 creates => "${java::params::java_base}/jdk${java::params::java_version}",
-                refreshonly => true,
-                subscribe => File["${java::params::java_base}/jdk${java::params::java_version}.tar.gz"],
+                require => File["${java::params::java_base}/jdk${java::params::java_version}.tar.gz"],
                 before => File["${java::params::java_base}/jdk${java::params::java_version}"],
         }
         file { "${java::params::java_base}/jdk${java::params::java_version}":
