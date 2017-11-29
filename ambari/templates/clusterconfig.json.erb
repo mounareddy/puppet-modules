@@ -1,0 +1,53 @@
+{
+  "blueprint" : "multinodeHDP",
+  "default_password" : "hadoop123",
+  "host_groups" :[
+    {
+      "name" : "host_group_1",
+      "hosts" : [
+        {
+          "fqdn" : "<%= scope.lookupvar('edge_server') %>"
+        }
+      ]
+    },
+
+  {
+          "name" : "host_group_2",
+          "hosts" : [
+            {
+              "fqdn" : "<%= scope.lookupvar('master')%>"
+            }
+
+          ]
+        },
+{
+      "name" : "host_group_3",
+      "hosts" : [
+        {
+          "fqdn" : "<%= scope.lookupvar('master2')%>"
+        }
+
+      ]
+    },
+    {
+          "name" : "host_group_4",
+          "hosts" : [
+            {
+              "fqdn" : "<%= scope.lookupvar('datanode_zk')%>"
+            }
+
+          ]
+        },
+
+{
+      "name" : "host_group_5",
+      "hosts" : [
+        {
+          "fqdn" : "<%= scope.lookupvar('datanode')%>"
+        }
+
+      ]
+    }
+
+  ]
+}
