@@ -4,7 +4,7 @@ do
 a='curl -u admin:admin http://localhost:8080/api/v1/hosts | grep host_name | wc -l'
 if [ $a -eq <%= scope.lookupvar('servercount')%> ]; then
   echo "all hosts reported"
-  curl -H "X-Requested-By: ambari" -X POST -d @clusterconfig.json -u admin:admin http://localhost:8080/api/v1/clusters/
+  curl -H "X-Requested-By: ambari" -X POST -d @clusterconfig.json -u admin:admin http://localhost:8080/api/v1/clusters/multinodeHDP
   value='false'
 fi
 sleep 120s

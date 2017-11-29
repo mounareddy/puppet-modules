@@ -6,7 +6,7 @@
       "name" : "host_group_1",
       "hosts" : [
         {
-          "fqdn" : "<%= scope.lookupvar('edge_server') %>"
+          "fqdn" : "<%= scope.lookupvar('edgenode') %>"
         }
       ]
     },
@@ -15,7 +15,7 @@
           "name" : "host_group_2",
           "hosts" : [
             {
-              "fqdn" : "<%= scope.lookupvar('master')%>"
+              "fqdn" : "<%= scope.lookupvar('master1')%>"
             }
 
           ]
@@ -33,21 +33,33 @@
           "name" : "host_group_4",
           "hosts" : [
             {
-              "fqdn" : "<%= scope.lookupvar('datanode_zk')%>"
+              "fqdn" : "<%= scope.lookupvar('datanode_withzk')%>"
             }
 
           ]
         },
 
-{
-      "name" : "host_group_5",
-      "hosts" : [
-        {
-          "fqdn" : "<%= scope.lookupvar('datanode')%>"
-        }
 
-      ]
-    }
+    {
+        "name" : "host_group_5",
+        "hosts" : [
+    <% scope.lookupvar('datanode').each_with_index do |var,i| -%>
+
+          {
+            "fqdn" : "<%= var %>"
+          }<%= ',' if i < (@datanode.size - 1) %>
+    <% end -%>
+        ]
+    },
+    #  "name" : "host_group_5",
+    #  "hosts" : [
+    #    <% scope.lookupvar('datanode').each_with_index do |dn, index| %>
+    #    {
+    #      "fqdn": "<%= dn %>"
+    #    }<% if index == scope.lookupvar('datanode').size - 1 %>,<% end %>
+    #    <% end %>
+    #  ]
+
 
   ]
 }

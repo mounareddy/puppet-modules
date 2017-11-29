@@ -4,7 +4,7 @@ class ambari::clusterconfig {
     owner  => 'root',
     group  => 'root',
     mode   => '0644',
-    content => template['ambari/clusterconfig.json.erb'],
+    content => template('ambari/clusterconfig.json.erb'),
     require => Class['::ambari::blueprint'],
   }
   file {'/tmp/cluster-install.sh':
@@ -12,7 +12,7 @@ class ambari::clusterconfig {
     owner  => 'root',
     group  => 'root',
     mode   => '0755',
-    content => template['ambari/cluster-install.sh.erb'],
+    content => template('ambari/cluster-install.sh.erb'),
     require => File['/tmp/clusterconfig.json'],
   }
   exec { 'clusterconfig':

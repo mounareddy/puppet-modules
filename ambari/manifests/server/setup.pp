@@ -19,4 +19,9 @@ class ambari::server::setup (
         path    => '/bin:/sbin:/usr/bin:/usr/sbin',
         creates => '/etc/amabri-server/conf/installed'
     }
+    exec {'run ambari-server setup --jdbc-db=postgres ':
+      command => "ambari-server setup --jdbc-db=postgres --jdbc-driver=/usr/share/java/postgresql-jdbc.jar"
+      path => 
+
+   }
 }

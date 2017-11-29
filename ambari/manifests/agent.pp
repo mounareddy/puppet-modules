@@ -1,5 +1,5 @@
 class ambari::agent (
-    $ambari_server              = 'localhost',
+    $ambari_server              = 'ambariserver.cdl.local',
     $ambari_url_port            = '8440',
     $ambari_secured_url_port    = '8441',
     $package_ensure             = $::ambari::params::agent_pkg_name,
