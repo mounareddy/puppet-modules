@@ -1,6 +1,10 @@
 class java inherits java::params {
 
+<<<<<<< HEAD
         file { "${java::params::java_base}":
+=======
+	file { "${java::params::java_base}":
+>>>>>>> 649d7c8e8211fa872a775485514ab269f021388f
                 ensure => 'directory',
                 mode => '0644',
                 owner => 'root',
@@ -19,7 +23,10 @@ class java inherits java::params {
                 command => "/bin/tar -xzvf jdk${java::params::java_version}.tar.gz",
                 cwd     => "${java::params::java_base}",
                 creates => "${java::params::java_base}/jdk${java::params::java_version}",
+<<<<<<< HEAD
                 alias => "extract-tar",
+=======
+>>>>>>> 649d7c8e8211fa872a775485514ab269f021388f
                 require => File["${java::params::java_base}/jdk${java::params::java_version}.tar.gz"],
                 before => File["${java::params::java_base}/jdk${java::params::java_version}"],
         }
@@ -28,7 +35,10 @@ class java inherits java::params {
                 mode => '0644',
                 owner => 'root',
                 group => 'root',
+<<<<<<< HEAD
                 alias => "java-dir",
+=======
+>>>>>>> 649d7c8e8211fa872a775485514ab269f021388f
                 require => Exec["untar-jdk${java::params::java_version}.tar.gz"],
         }
         file { "/etc/profile.d/java_home.sh":
@@ -39,4 +49,5 @@ class java inherits java::params {
                 group => root,
                 require => File["${java::params::java_base}/jdk${java::params::java_version}"],
         }
+
 }

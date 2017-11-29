@@ -13,15 +13,22 @@ class ambari::server::setup (
     if $cmd == 'NOT_IMPLEMENTED' {
         fail('only :default_install => true is supported')
     }
+<<<<<<< HEAD
 # run the setup with  ambari-server setup --jdbc-db=postgres --jdbc-driver=/usr/share/java/postgresql-jdbc.jar
+=======
+
+>>>>>>> 649d7c8e8211fa872a775485514ab269f021388f
     exec { 'run ambari-server setup':
         command => "${cmd} && touch /etc/ambari-server/conf/installed",
         path    => '/bin:/sbin:/usr/bin:/usr/sbin',
         creates => '/etc/amabri-server/conf/installed'
     }
+<<<<<<< HEAD
     exec {'run ambari-server setup --jdbc-db=postgres ':
       command => "ambari-server setup --jdbc-db=postgres --jdbc-driver=/usr/share/java/postgresql-jdbc.jar"
       path => 
 
    }
+=======
+>>>>>>> 649d7c8e8211fa872a775485514ab269f021388f
 }
