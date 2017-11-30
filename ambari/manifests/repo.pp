@@ -1,10 +1,9 @@
 class ambari::repo inherits ambari::params {
-<<<<<<< HEAD
-=======
+    # TODO check if this is required
     package {'wget':
-	ensure => installed,		
+	     ensure => installed,
     }
->>>>>>> 649d7c8e8211fa872a775485514ab269f021388f
+
     if $::osfamily == 'RedHat' {
         wget::fetch { 'ambari-repo':
             source => "http://public-repo-1.hortonworks.com/ambari/centos${::operatingsystemmajrelease}/${::ambari::params::repo_version}/updates/${::ambari::params::version}/ambari.repo",
