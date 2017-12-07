@@ -18,10 +18,10 @@ max_connections = 550
 
 #log_bin should be on a disk with enough free space. Replace '/var/lib/mysql/mysql_binary_log' with an appropriate path for your system
 #and chown the specified folder to the mysql user.
-log_bin=/var/lib/mysql/mysql_binary_log
+#log_bin=/var/lib/mysql/mysql_binary_log
 
 # For MySQL version 5.1.8 or later. For older versions, reference MySQL documentation for configuration help.
-binlog_format = mixed
+#binlog_format = mixed
 
 read_buffer_size = 2M
 read_rnd_buffer_size = 16M
@@ -36,6 +36,9 @@ innodb_buffer_pool_size = 4G
 innodb_thread_concurrency = 8
 innodb_flush_method = O_DIRECT
 innodb_log_file_size = 512M
+
+log-error=/var/log/mysqld.log
+pid-file=/var/run/mysqld/mysqld.pid
 
 [mysqld_safe]
 log-error=/var/log/mysqld.log

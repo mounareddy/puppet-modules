@@ -1,43 +1,40 @@
 class mysqldb::install {
-#install puppet module install maestrodev-wget --version 1.7.3
 
-#package { 'wget':
-#  ensure => installed,
-#}
-
-if os::family == 'RedHat' {
-  wget::fetch { 'mysql server':
+  wget::fetch { 'mysql-server':
     source  => "https://dev.mysql.com/get/mysql57-community-release-el7-11.noarch.rpm",
+    destination => '/root/',
     user    => 'root',
     mode    => '0644',
-    before  => Exec['install  mysql-community-server'],
-    }
+    before  => Exec['rpm-mysql-community-server'],
   }
-  exec { 'install  mysql-community-server':
-    command  => '/bin/rpm -Uvh mysql57-community-release-el7-11.noarch.rpm',
+  exec { 'rpm-mysql-community-server':
+    command  => 'rpm -ivh mysql57-community-release-el7-11.noarch.rpm',
     cwd      => '/root/',
+    unless   => 'ls -l /root/mysql57-community-release-el7-11',
     path     => '/usr/bin:/usr/sbin:/bin:/usr/local/bin',
-    #require => Wget::fetch['mysql'],
-    # refreshonly => true,
+    require  => Wget::Fetch['mysql-server'],
+    refreshonly => true,
+  }
+  exec { 'installing-mysql-server':
+    command => '/bin/yum -y install mysql-community-server',
+    require => Exec['rpm-mysql-community-server'],
+    before  => Wget::Fetch['mysql-connector-java'],
   }
   #Download MySQL JDBC driver
 
-  if os::family == 'RedHat' {
-    wget::fetch { 'mysql-connector-java.jar':
-        source   => "https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-5.1.44.tar.gz",
-        user     => 'root',
-        mode     => '0644',
-        require  => Exec['install  mysql-community-server'],
-        before   => Exec['install mysql connector'],
-      }
+  wget::fetch { 'mysql-connector-java':
+    source   => "https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-5.1.44.tar.gz",
+    destination => '/root/',
+    user     => 'root',
+    mode     => '0644',
+    before   => Exec['install-mysql-connector'],
+    require  => Exec['installing-mysql-server'],
   }
-  exec {'install mysql connector':
-    command     => 'tar -xf mysql-connector-java-5.1.44.tar.gz',
+  exec {'install-mysql-connector':
+    command     => 'tar zxf mysql-connector-java-5.1.44.tar.gz && cp mysql-connector-java-5.1.44/mysql-connector-java-5.1.44-bin.jar /usr/share/java/mysql-connector-java.jar',
     cwd         => '/root/',
-    destination => '/usr/share/java/mysql-connector-java.jar',
+    unless	=> 'test -f /usr/share/java/mysql-connector-java.jar',
     path        => '/usr/bin:/usr/sbin:/bin:/usr/local/bin',
-    #require    => Wget::fetch['mysql-connector-java.jar'],
+    require     => Wget::Fetch['mysql-connector-java'],
   }
-
-
 }
