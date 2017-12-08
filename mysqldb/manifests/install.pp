@@ -1,3 +1,5 @@
+### This class will install all the requires packages needed fro the mysql
+### Download, extract and install the mysql-community-server along with the mysql-connector-java driver 
 class mysqldb::install {
 
   wget::fetch { 'mysql-server':

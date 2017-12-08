@@ -1,3 +1,4 @@
+#Adding the my.cfg file from the templates folder into /etc/ on the host
 class mysqldb::config {
   file {'/etc/my.cnf':
       owner     => 'root',

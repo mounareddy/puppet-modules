@@ -1,4 +1,5 @@
-
+#defining a db_create resource used to create a new database
+#This is called in the init file withe values to create a database
 define mysqldb::db_create (String $user, String $password) {
     $new_password = $mysqldb::params::new_password
     exec { "create-${name}-db":

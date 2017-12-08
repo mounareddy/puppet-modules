@@ -1,3 +1,4 @@
+#script to grep the root user password after the mysql is started and updtaing the root user password
 #!/bin/bash
 
 new_password="Hadoop123!"
