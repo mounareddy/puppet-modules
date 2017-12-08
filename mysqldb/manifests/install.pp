@@ -1,5 +1,7 @@
 ### This class will install all the requires packages needed fro the mysql
-### Download, extract and install the mysql-community-server along with the mysql-connector-java driver 
+### Download, extract and install the mysql-community-server along with the mysql-connector-java driver
+# requires puppet module install maestrodev-wget --version 1.7.3
+
 class mysqldb::install {
 
   wget::fetch { 'mysql-server':
@@ -12,10 +14,9 @@ class mysqldb::install {
   exec { 'rpm-mysql-community-server':
     command  => 'rpm -ivh mysql57-community-release-el7-11.noarch.rpm',
     cwd      => '/root/',
-    unless   => 'ls -l /root/mysql57-community-release-el7-11',
+    unless   => 'yum repolist all | grep mysql',
     path     => '/usr/bin:/usr/sbin:/bin:/usr/local/bin',
     require  => Wget::Fetch['mysql-server'],
-    refreshonly => true,
   }
   exec { 'installing-mysql-server':
     command => '/bin/yum -y install mysql-community-server',
