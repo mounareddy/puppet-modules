@@ -1,10 +1,15 @@
-class cm::server {
+class cm::server (
   $db_type = $cm::params::db_type,
   $db_user = $cm::params::db_user,
   $db_pass = $cm::params::db_pass,
   $database_name = $cm::params::database_name,
   $service_ensure = $cm::params::service_ensure,
   $service_enable = $cm::params::service_enable,
+) inherits cm::params
+
+  {
+
+  require mysqldb
 
   package { 'cloudera-manager-server':
       ensure => installed,
@@ -17,13 +22,13 @@ class cm::server {
     enable     => $service_enable,
     hasrestart => true,
     hasstatus  => true,
-    require    => Package['cloudera-manager-server'],
+    require    => Package["cloudera-manager-server"],
   }
   #Preparing a Cloudera Manager Server External Database
 
   exec { 'scm_prepare_database':
-    command => "/usr/share/cmf/schema/scm_prepare_database.sh ${db_type} ${database_name} --user=${db_user} --password=${db_pass} ",
+    command => "/usr/share/cmf/schema/scm_prepare_database.sh ${db_type} ${database_name} ${db_user} ${db_pass} ",
     creates => '/etc/cloudera-scm-server/.scm_prepare_database',
-    before  => Service['cloudera-scm-server'],
+    before  => Service["cloudera-scm-server"],
   }
 }
