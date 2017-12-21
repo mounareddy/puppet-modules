@@ -23,6 +23,7 @@ class cm::agent (
     group => 'root',
     mode => '0644',
     content => template('cm/agent-config.ini.erb'),
-    require => Service['cloudera-scm-agent'],
+    before => Service['cloudera-scm-agent'],
+    notify => Service['cloudera-scm-agent']
   }
 }

@@ -1,0 +1,177 @@
+{
+  "cdhVersion" : "5.13.1",
+  "displayName" : "Cluster_cdh",
+  "cmVersion" : "5.13.1",
+  "repositories" : [ "https://archive.cloudera.com/cdh5/parcels/{latest_supported}/", "https://archive.cloudera.com/cdh4/parcels/latest/", "https://archive.cloudera.com/impala/parcels/latest/", "https://archive.cloudera.com/search/parcels/latest/", "https://archive.cloudera.com/accumulo/parcels/1.4/", "https://archive.cloudera.com/accumulo-c5/parcels/latest/", "https://archive.cloudera.com/kafka/parcels/latest/", "http://archive.cloudera.com/kudu/parcels/latest/", "https://archive.cloudera.com/spark/parcels/latest/", "https://archive.cloudera.com/sqoop-connectors/parcels/latest/", "http://archive.cloudera.com/spark2/parcels/2.2.0.cloudera1/.", "http://archive.cloudera.com/spark2/parcels/2.2.0.cloudera1/" ],
+  "products" : [ {
+    "version" : "5.13.1-1.cdh5.13.1.p0.2",
+    "product" : "CDH"
+  }, {
+    "version" : "2.2.0.cloudera1-1.cdh5.12.0.p0.142354",
+    "product" : "SPARK2"
+  } ],
+  "services" : [ {
+    "refName" : "zookeeper",
+    "serviceType" : "ZOOKEEPER",
+    "roleConfigGroups" : [ {
+      "refName" : "zookeeper-SERVER-BASE",
+      "roleType" : "SERVER",
+      "base" : true
+    } ]
+  }, {
+    "refName" : "hdfs",
+    "serviceType" : "HDFS",
+    "roleConfigGroups" : [ {
+      "refName" : "hdfs-NAMENODE-BASE",
+      "roleType" : "NAMENODE",
+      "base" : true
+    }, {
+      "refName" : "hdfs-SECONDARYNAMENODE-BASE",
+      "roleType" : "SECONDARYNAMENODE",
+      "base" : true
+    }, {
+      "refName" : "hdfs-DATANODE-BASE",
+      "roleType" : "DATANODE",
+      "base" : true
+    }, {
+      "refName" : "hdfs-BALANCER-BASE",
+      "roleType" : "BALANCER",
+      "base" : true
+    }, {
+      "refName" : "hdfs-DATANODE-1",
+      "roleType" : "DATANODE",
+      "base" : false
+    } ]
+  }, {
+    "refName" : "yarn",
+    "serviceType" : "YARN",
+    "roleConfigGroups" : [ {
+      "refName" : "yarn-RESOURCEMANAGER-BASE",
+      "roleType" : "RESOURCEMANAGER",
+      "base" : true
+    }, {
+      "refName" : "yarn-NODEMANAGER-BASE",
+      "roleType" : "NODEMANAGER",
+      "base" : true
+    }, {
+      "refName" : "yarn-NODEMANAGER-1",
+      "roleType" : "NODEMANAGER",
+      "base" : false
+    }, {
+      "refName" : "yarn-JOBHISTORY-BASE",
+      "roleType" : "JOBHISTORY",
+      "base" : true
+    } ]
+  }, {
+    "refName" : "hive",
+    "serviceType" : "HIVE",
+    "serviceConfigs" : [ {
+      "name" : "hive_metastore_database_password",
+      "variable" : "hive-hive_metastore_database_password"
+    }, {
+      "name" : "hive_metastore_database_host",
+      "variable" : "hive-hive_metastore_database_host"
+    } ],
+    "roleConfigGroups" : [ {
+      "refName" : "hive-GATEWAY-BASE",
+      "roleType" : "GATEWAY",
+      "base" : true
+    }, {
+      "refName" : "hive-HIVESERVER2-BASE",
+      "roleType" : "HIVESERVER2",
+      "base" : true
+    }, {
+      "refName" : "hive-HIVEMETASTORE-BASE",
+      "roleType" : "HIVEMETASTORE",
+      "base" : true
+    } ]
+  }, {
+    "refName" : "spark2_on_yarn",
+    "serviceType" : "SPARK2_ON_YARN",
+    "serviceConfigs" : [ {
+      "name" : "yarn_service",
+      "ref" : "yarn"
+    }, {
+      "name" : "hive_service",
+      "ref" : "hive"
+    } ],
+    "roleConfigGroups" : [ {
+      "refName" : "spark2_on_yarn-GATEWAY-BASE",
+      "roleType" : "GATEWAY",
+      "base" : true
+    }, {
+      "refName" : "spark2_on_yarn-SPARK2_YARN_HISTORY_SERVER-BASE",
+      "roleType" : "SPARK2_YARN_HISTORY_SERVER",
+      "base" : true
+    } ]
+  }, {
+    "refName" : "hbase",
+    "serviceType" : "HBASE",
+    "serviceConfigs" : [ {
+      "name" : "zookeeper_service",
+      "ref" : "zookeeper"
+    }, {
+      "name" : "hdfs_service",
+      "ref" : "hdfs"
+    } ],
+    "roleConfigGroups" : [ {
+      "refName" : "hbase-REGIONSERVER-BASE",
+      "roleType" : "REGIONSERVER",
+      "base" : true
+    }, {
+      "refName" : "hbase-MASTER-BASE",
+      "roleType" : "MASTER",
+      "base" : true
+    } ]
+  } ],
+  "hostTemplates" : [ {
+    "refName" : "HostTemplate-0-from-manager.cdl.local",
+    "cardinality" : 1,
+    "roleConfigGroupsRefNames" : [ "hdfs-SECONDARYNAMENODE-BASE", "hive-GATEWAY-BASE", "spark2_on_yarn-GATEWAY-BASE", "zookeeper-SERVER-BASE" ]
+  }, {
+    "refName" : "HostTemplate-1-from-master.cdl.local",
+    "cardinality" : 1,
+    "roleConfigGroupsRefNames" : [ "hbase-MASTER-BASE", "hdfs-BALANCER-BASE", "hdfs-NAMENODE-BASE", "hive-HIVEMETASTORE-BASE", "hive-HIVESERVER2-BASE", "spark2_on_yarn-SPARK2_YARN_HISTORY_SERVER-BASE", "yarn-JOBHISTORY-BASE", "yarn-RESOURCEMANAGER-BASE", "zookeeper-SERVER-BASE" ]
+  }, {
+    "refName" : "HostTemplate-2-from-agent1.cdl.local",
+    "cardinality" : 1,
+    "roleConfigGroupsRefNames" : [ "hbase-REGIONSERVER-BASE", "hdfs-DATANODE-1", "yarn-NODEMANAGER-1", "zookeeper-SERVER-BASE" ]
+  }, {
+    "refName" : "HostTemplate-3-from-agent[2-3].cdl.local",
+    "cardinality" : 2,
+    "roleConfigGroupsRefNames" : [ "hbase-REGIONSERVER-BASE", "hdfs-DATANODE-BASE", "yarn-NODEMANAGER-BASE" ]
+  } ],
+  "instantiator" : {
+    "clusterName" : "CDH_Cluster",
+    "hosts" : [ {
+      "hostName" : "<%= @cm_hostname %>",
+      "hostTemplateRefName" : "HostTemplate-0-from-manager.cdl.local"
+    }, {
+      "hostName" : "<%= @master_hostname %>",
+      "hostTemplateRefName" : "HostTemplate-1-from-master.cdl.local"
+    }, {
+      "hostName" : "<%= @datanode1_hostname %>",
+      "hostTemplateRefName" : "HostTemplate-2-from-agent1.cdl.local"
+    },{
+      "hostNameRange" : "<%= @datanode2_hostname %>",
+      "hostTemplateRefName" : "HostTemplate-3-from-agent[2-3].cdl.local"
+    }, {
+      "hostNameRange" : "<%= @datanode3_hostname %>",
+      "hostTemplateRefName" : "HostTemplate-3-from-agent[2-3].cdl.local"
+    } ],
+    "variables" : [ {
+      "name" : "hive-hive_metastore_database_host",
+      "value" : "<%= @mysql_hostname %>"
+    }, {
+      "name" : "hive-hive_metastore_database_password",
+      "value" : "<%= @hive_metastore_password %>"
+    } ],
+    "roleConfigGroups" : [ {
+      "rcgRefName" : "hdfs-DATANODE-1",
+      "name" : ""
+    }, {
+      "rcgRefName" : "yarn-NODEMANAGER-1",
+      "name" : ""
+    } ]
+  }
+}

@@ -11,6 +11,19 @@ class cm::params {
   $agent_enable   = 'true'
   $server_host    = 'localhost'
   $server_port    = '7182'
+  $hive_metastore_password   = ''
+  $cm_hostname = ''
+  $cm_port = '7180'
+  $mysql_hostname  = ''
+  $master_hostname = ''
+  $datanode1_hostname = ''
+  $datanode2_hostname = ''
+  $datanode3_hostname = ''
+  $cm_username  = ''
+  $cm_password  = ''
+  $mysql_hostname = ''
+  $hive_metastore_password = ''
+  $
 
    case $::operatingsystem {
      'CentOs','RedHat': {

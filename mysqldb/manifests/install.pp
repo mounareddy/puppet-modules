@@ -34,7 +34,7 @@ class mysqldb::install {
     require  => Exec['installing-mysql-server'],
   }
   exec {'install-mysql-connector':
-    command     => 'tar zxf mysql-connector-java-5.1.44.tar.gz && cp mysql-connector-java-5.1.44/mysql-connector-java-5.1.44-bin.jar /usr/share/java/mysql-connector-java.jar',
+    command     => 'tar zxf mysql-connector-java-5.1.44.tar.gz && mkdir /usr/share/java/ &&  cp mysql-connector-java-5.1.44/mysql-connector-java-5.1.44-bin.jar /usr/share/java/mysql-connector-java.jar',
     cwd         => '/root/',
     unless	=> 'test -f /usr/share/java/mysql-connector-java.jar',
     path        => '/usr/bin:/usr/sbin:/bin:/usr/local/bin',
