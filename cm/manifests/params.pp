@@ -14,16 +14,18 @@ class cm::params {
   $hive_metastore_password   = ''
   $cm_hostname = ''
   $cm_port = '7180'
-  $mysql_hostname  = ''
-  $master_hostname = ''
-  $datanode1_hostname = ''
-  $datanode2_hostname = ''
-  $datanode3_hostname = ''
-  $cm_username  = ''
-  $cm_password  = ''
-  $mysql_hostname = ''
-  $hive_metastore_password = ''
-  $
+  $mysql_hostname  = 'changeme'
+  $master_hostname = 'changeme'
+  $datanode1_hostname = 'changeme'
+  $datanode2_hostname = 'changeme'
+  $datanode3_hostname = 'changeme'
+  $cm_username  = 'changeme'
+  $cm_password  = 'changeme'
+  $mysql_hostname = 'changeme'
+  $hive_metastore_password = 'changeme'
+  $kdc_hostname = 'changeme'
+  $realm_caps = 'changeme'
+  $realm_in_small = 'changeme'
 
    case $::operatingsystem {
      'CentOs','RedHat': {
