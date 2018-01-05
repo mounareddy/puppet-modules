@@ -1,0 +1,411 @@
+import os, sys, time
+from cm_api.api_client import ApiResource
+from collections import namedtuple
+from cm_api.api_client import ApiResource
+from cm_api.api_client import API_CURRENT_VERSION
+from cm_api.endpoints.types import ApiCommand
+from threading import Thread
+from cm_api.endpoints.cms import ClouderaManager
+
+#logger = ctologger.getCdhLogger()
+
+CM_HOST = "<%= @cm_hostname %>"
+CM_USER = "<%= @cm_username %>"
+CM_PASSWORD = "<%= @cm_password %>"
+CLUSTER_NAME = "<%= @cluster_name %>"
+CDH_VERSION = "<%= @cdh_version %>"
+CDH_FULL_VERSION = "<%= @cdh_full_version %>"
+
+KDC_HOST = "<%= @kdc_hostname %>"
+KDC_STATUS = "<%= @kdc_status %>" #yes to enable kerberos, no to diable kerberos
+KDC_REALM = "<%= @realm_caps %>"
+KDC_ADMIN_USER = "<%= @kdc_username %>"
+KDC_ADMIN_PWD = "<%= @kdc_password %>"
+SSHUSER  = "<%= @ssh_user %>"
+PRINCIPAL_PASSWORD= "<%= @cloudera_principal_password %>"
+
+hosts = ["masternode.cdl.local","datanode.cdl.local","datanode2.cdl.local","datanode3.cdl.local"]
+ZOOKEEPER_HOSTS = ["cm-server.cdl.local","masternode.cdl.local","datanode.cdl.local"]
+HBASE_HM_HOSTS = "<%= @hbase_master_node %>"
+
+
+class CommandWait(Thread):
+    def __init__(self, command):
+        Thread.__init__(self)
+        self.command = command
+
+    def run(self):
+        self.command.wait()
+
+#adding cluster defination
+def init_cluster():
+
+	API = ApiResource(CM_HOST, username=CM_USER, password=CM_PASSWORD)
+	MANAGER = API.get_cloudera_manager()
+	#MANAGER.update_config(CM_CONFIG)
+        #logger.info("Connected to CM host on " + CM_HOST)
+	#logger.info('Inside init_cluster.')
+
+	try:
+		cluster = API.get_cluster(CLUSTER_NAME)
+	        print("cluster is found" % cluster)
+	#	logger.info("Using existing cluster object")
+	except Exception as e:
+		if "not found" in e.message:
+			cluster = API.create_cluster(CLUSTER_NAME,CDH_VERSION,CDH_FULL_VERSION)
+			print("creating the new cluster")
+	#		logger.info("Created the new cluster")
+
+
+api = ApiResource(CM_HOST, username=CM_USER, password=CM_PASSWORD)
+cloudera_manager = api.get_cloudera_manager()
+
+#Check if Principals had already created for Kerberos
+def verify_cloudera_manager_has_kerberos_principal(cloudera_manager):
+	try:
+                cm_configs = cloudera_manager.get_config()
+                # If the KDC host and security realm are set, this is a good indicator that the Kerberos
+                # adminstrative principal has been imported.
+                print cm_configs
+                if 'KDC_HOST' in cm_configs and 'SECURITY_REALM' in cm_configs:
+                        return True
+	        return False
+
+        except Exception, e:
+                print ("Error in veryfying Cloudera Manager Kerberos Principal. Exception:" + str(e))
+                #logger.exception(e)
+                raise Exception(e)
+
+#Check whether KDC host is accessible
+def check_ping():
+        try:
+                response = os.system("ping -c 1 " +KDC_HOST)
+                # and then check the response...
+                if response == 0:
+                        pingstatus = "Network Active"
+                else:
+                        pingstatus = "Network Error"
+
+                return pingstatus
+        except Exception, e:
+                print("Error in veryfying KDC HOST. Exception:" + str(e))
+                #logger.exception(e)
+                raise Exception(e)
+
+
+#Configure all services for Kerberos Setup
+def enable_configure_services(cluster):
+
+    services = cluster.get_all_services()
+
+    for service in services:
+        service_type = service.type
+        if service_type == 'HDFS':
+            print("Configuring HDFS for Kerberos.")
+
+	    try:
+	        service.update_config(
+		    {'hadoop_security_authentication': 'kerberos',
+		    'hadoop_security_authorization': 'true'}
+		)
+	    except Exception, e:
+		print("Error in Configuring Kerberos for HDFS. Exception:" + str(e))
+		#logger.exception(e)
+		raise Exception(e)
+
+        role_cfgs = service.get_all_role_config_groups()
+
+        for role_cfg in role_cfgs:
+            if role_cfg.roleType == 'DATANODE':
+		try:
+			role_cfg.update_config(
+				{'dfs_datanode_port': '1004',
+				'dfs_datanode_http_port': '1006',
+				'dfs_datanode_data_dir_perm': '700'}
+			)
+		except Exception, e:
+			print("Error in in Configuring HDFS for Zookeeper. Exception:" + str(e))
+			#logger.exception(e)
+			raise Exception(e)
+
+
+            elif service_type == 'HBASE':
+            		print("Configuring HBase for Kerberos.")
+			try:
+            		    service.update_config(
+                		    {'hbase_security_authentication': 'kerberos',
+                 		    'hbase_security_authorization': 'true'}
+            		    )
+			except Exception, e:
+			    print("Error in veryfying Kerberos HOST. Exception:" + str(e))
+			    #logger.exception(e)
+			    raise Exception(e)
+            elif service_type == 'ZOOKEEPER':
+			print("Configuring ZooKeeper for Kerberos.")
+			try:
+			    service.update_config(
+			        {'enableSecurity': 'true'}
+			    )
+			except Exception, e:
+			    print("Error in Configuring Kerberos for Zookeeper. Exception:" + str(e))
+			    #logger.exception(e)
+			    raise Exception(e)
+			role_cfgs = service.get_all_role_config_groups()
+
+			for role_cfg in role_cfgs:
+				if role_cfg.roleType == 'SERVER':
+					try:
+					    role_cfg.update_config(
+						    {'zookeeper_config_safety_valve': 'jaasLoginRenew=3600000',
+						    'zk_server_java_opts': '-Djava.security.auth.login.config=jaas.conf'}
+					    )
+					except Exception, e:
+					    print("Error in Configuring Kerberos for Zookeeper. Exception:" + str(e))
+					    #logger.exception(e)
+					    raise Exception(e)
+
+
+#Disable Kerberos
+cluster = api.get_cluster(CLUSTER_NAME)
+def disable_configure_services(cluster):
+    services = cluster.get_all_services()
+
+    for service in services:
+        service_type = service.type
+        if service_type == 'HDFS':
+            print("Disabling Kerberos Configuring for HDFS.")
+            service.update_config(
+                {'hadoop_security_authentication': 'simple',
+                 'hadoop_security_authorization': 'false'}
+            )
+
+            role_cfgs = service.get_all_role_config_groups()
+
+            for role_cfg in role_cfgs:
+                if role_cfg.roleType == 'DATANODE':
+                    role_cfg.update_config(
+                        {'dfs_datanode_port': '50010',
+                         'dfs_datanode_http_port': '50075',
+                         'dfs_datanode_data_dir_perm': '755'}
+                    )
+        elif service_type == 'HBASE':
+            print("Disabling Kerberos Configuring for HBase")
+            service.update_config(
+                {'hbase_security_authentication': 'simple',
+                 'hbase_security_authorization': 'false'}
+            )
+        elif service_type == 'ZOOKEEPER':
+			print("Disabling Kerberos Configuring for ZooKeeper.")
+			service.update_config(
+				{'enableSecurity': 'false'}
+			)
+
+			role_cfgs = service.get_all_role_config_groups()
+
+			for role_cfg in role_cfgs:
+				if role_cfg.roleType == 'SERVER':
+					role_cfg.update_config(
+						{'zookeeper_config_safety_valve': '',
+						'zk_server_java_opts': '-Dzookeeper.skipACL=yes'}
+					)
+
+#Funtion to generate Credentials
+def wait_for_generate_credentials(cloudera_manager):
+    try:
+        generate_commands = None
+        num_tries = 3
+
+        for i in range(0, num_tries):
+            generate_commands = find_command_by_name(cloudera_manager, 'GenerateCredentials')
+
+            # If the list is full
+            if generate_commands:
+                break
+
+            # Couldn't find the command, so sleep 5 seconds and try again
+            time.sleep(5)
+
+        # It's possible that multiple GenerateCredentials commands are generated during
+        # service configuration. We should wait for all of them.
+        if generate_commands:
+            for generate_command in generate_commands:
+                wait_for_command('Waiting for Generate Credentials', generate_command)
+    except Exception, e:
+        print("Error in Generating Credentials. Exception:" + str(e))
+        #logger.exception(e)
+        raise Exception(e)
+
+def find_command_by_name(cloudera_manager, name):
+    commands = cloudera_manager.get_commands('full')
+    found_commands = [command for command in commands if command.name == name]
+
+    return found_commands
+
+
+def wait_for_command(msg, command):
+    print(msg)
+
+    cmd_wait = CommandWait(command)
+    cmd_wait.start()
+
+    while cmd_wait.is_alive():
+        cmd_wait.join(5.0)
+
+    print(" Done.\n")
+
+#Configuring JAAS Configuration
+def create_zookeeper_jaas(hostname):
+    try:
+        jaas_conf = open("/etc/zookeeper/conf/jaas.conf","w")
+	jaas_conf.writelines(["Server {\n","  com.sun.security.auth.module.Krb5LoginModule required\n","  useKeyTab=true\n","  keyTab=\"zookeeper.keytab\"\n","  storeKey=true\n", "  useTicketCache=false\n", "  principal=\"zookeeper/"+hostname+"@"+KDC_REALM+"\";\n","};\n"])
+	jaas_conf.close()
+    except Exception, e:
+        print("Error in Configuring Zookeeper JAAS. Exception:" + str(e))
+        #logger.exception(e)
+        raise Exception(e)
+
+#Configuring JAAS Configuration for HBASE
+def create_hbase_jaas(hostname):
+	    try:
+	        jaas_conf = open("/etc/hbase/conf/zk-jaas.conf","w")
+	        jaas_conf.writelines(["Client {\n","  com.sun.security.auth.module.Krb5LoginModule required\n","  useKeyTab=true\n","  keyTab=\"hbase.keytab\"\n","  storeKey=true\n", "  useTicketCache=false\n", "  principal=\"hbase/"+hostname+"@"+KDC_REALM+"\";\n","};\n"])
+	        jaas_conf.close()
+	    except Exception, e:
+	        print("Error in Configuring HBASE JAAS. Exception:" + str(e))
+	        #logger.exception(e)
+	        raise Exception(e)
+
+#Creating Cloudera Prinicipal
+def creating_cloudera_principal():
+    try:
+        os.system("ssh "+SSHUSER+"@"+KDC_HOST+" \"echo \"addprinc -pw "+PRINCIPAL_PASSWORD+" cloudera-scm/admin@"+KDC_REALM+" \" | /usr/sbin/kadmin.local> /dev/null\"")
+	os.system("ssh "+SSHUSER+"@"+KDC_HOST+" \"echo \"xst -k /root/cmf.keytab cloudera-scm/admin@"+KDC_REALM+"\" | /usr/sbin/kadmin.local> /dev/null\"")
+    except Exception, e:
+        print("Error in Creating Cloudera Principal. Exception:" + str(e))
+        #logger.exception(e)
+        raise Exception(e)
+
+#Update KDC Configuration by copying the file
+def update_kdc_config(cluster,api):
+	print("Copying krb5 file to CM host")
+
+
+	os.system("ssh root@"+CM_HOST+" -t 'scp root@"+KDC_HOST+":/etc/krb5.conf root@"+CM_HOST+":/etc/'")
+	os.system("ssh root@"+CM_HOST+" -t 'chown cloudera-scm:cloudera-scm root@"+CM_HOST+":/etc/krb5.conf'")
+	os.system("ssh root@"+CM_HOST+" -t 'scp root@"+KDC_HOST+":/var/kerberos/krb5kdc/kdc.conf /var/kerberos/krb5kdc/'")
+	os.system("ssh root@"+CM_HOST+" -t 'chown cloudera-scm:cloudera-scm /var/kerberos/krb5kdc/kdc.conf'")
+	print("getting Keytab file from KDC")
+
+	os.system("ssh root@"+CM_HOST+" -t 'scp root@"+KDC_HOST+":/root/cmf.keytab /etc/cloudera-scm-server/'")
+	os.system("ssh root@"+CM_HOST+" -t 'chown cloudera-scm:cloudera-scm /etc/cloudera-scm-server/cmf.keytab'")
+	if (os.system("ssh root@"+CM_HOST+" -t '/usr/bin/kadmin -k -p cloudera-scm/admin@"+KDC_REALM+" -t /etc/cloudera-scm-server/cmf.keytab -q exit'") == 0):
+	   os.system("ssh root@"+CM_HOST+" -t 'echo cloudera-scm/admin@"+KDC_REALM+" > /etc/cloudera-scm-server/cmf.principal'")
+	   os.system("ssh root@"+CM_HOST+" -t 'chown cloudera-scm:cloudera-scm /etc/cloudera-scm-server/cmf.principal'")
+	   print("Making Entries for services in ACL")
+       with open("/var/kerberos/krb5kdc/kadm5.acl", "w") as f:
+	        f.write("*/admin@"+KDC_REALM+" *\n")
+	        f.write("cloudera-scm/admin@"+KDC_REALM+" *\n")
+	        f.write("cloudera-scm@"+KDC_REALM+" * hbase/*@"+KDC_REALM+"\n")
+            f.write("cloudera-scm@"+KDC_REALM+" * hdfs/*@"+KDC_REALM+"\n")
+	        f.write("cloudera-scm@"+KDC_REALM+" * hive/*@"+KDC_REALM+"\n")
+	        f.write("cloudera-scm@"+KDC_REALM+" * HTTP/*@"+KDC_REALM+"\n")
+	       # f.write("cloudera-scm@"+KDC_REALM+" * hue/*@"+KDC_REALM+"\n")
+            f.write("cloudera-scm@"+KDC_REALM+" * mapred/*@"+KDC_REALM+"\n")
+	        f.write("cloudera-scm@"+KDC_REALM+" * yarn/*@"+KDC_REALM+"\n")
+	        f.write("cloudera-scm@"+KDC_REALM+" * spark/*@"+KDC_REALM+"\n")
+            f.write("cloudera-scm@"+KDC_REALM+" * zookeeper/*@"+KDC_REALM+"\n")
+
+       cm_config = api.get_cloudera_manager().update_config({'SECURITY_REALM' : KDC_REALM})
+	   cm_config = api.get_cloudera_manager().update_config({'KDC_HOST' : KDC_HOST})
+	else:
+	    print("Failed to authenticate cloudera cmf.keytab...")
+	    #raise Exception("Authentication Failed")
+
+
+
+#Copying file to all Nodes in the cluster
+def upload_kdc_config_file_to_allnode():
+	#hosts = utils.getAllHostsXml()
+	for x in hosts:
+		if x != CM_HOST:
+
+
+			os.system("scp /etc/krb5.conf root@"+x+":/etc/")
+			os.system("ssh "+x+" chown cloudera-scm:cloudera-scm /etc/krb5.conf")
+
+			os.system("ssh "+x+" mkdir -p /var/kerberos/krb5kdc/ && scp /var/kerberos/krb5kdc/kdc.conf root@"+x+":/var/kerberos/krb5kdc/")
+			os.system("ssh "+x+" chown cloudera-scm:cloudera-scm /var/kerberos/krb5kdc/kdc.conf")
+
+			os.system("scp /var/kerberos/krb5kdc/kadm5.acl root@"+x+":/var/kerberos/krb5kdc/")
+			os.system("ssh "+x+" chown cloudera-scm:cloudera-scm /var/kerberos/krb5kdc/kadm5.acl")
+
+def main():
+    try:
+
+
+		#cm_utils.waitForRunningCommand(CM_HOST,CLUSTER_NAME)
+		if(check_ping()=="Network Error"):
+			print("Error in deploy Kerberos.")
+			raise Exception("Error in deploy Kerberos.")
+
+   		else:
+	#if (check_ping()=="Network Error"):
+	#	ctologger.createCDHLogger()
+	#	logger = logging.getLogger("CDHLOGGER")
+	#	logger.error("Check /etc/hosts for "+KDC_HOST)
+
+	#else:
+
+			#logger = logging.getLogger("CDHLOGGER")
+
+			print('Inside Kerberos Main')
+			api = ApiResource(CM_HOST, username=CM_USER, password=CM_PASSWORD)
+			cluster = api.get_cluster(CLUSTER_NAME)
+
+			if KDC_STATUS.lower() == "yes":
+				print("Enabling Kerberos")
+				#ZOOKEEPER_HOSTS = utils.getXmlValue("zookeeper", "hosts").split(',')
+				#create_zookeeper_jaas(ZOOKEEPER_HOSTS[0])
+				#HBASE_HM_HOSTS = utils.getXmlValue("hbase", "Master").split(',')
+				#create_hbase_jaas(HBASE_HM_HOSTS[0])
+				creating_cloudera_principal()
+				#cm_utils.waitForRunningCommand(CM_HOST,CLUSTER_NAME)
+				update_kdc_config(cluster,api)
+				upload_kdc_config_file_to_allnode()
+				cloudera_manager = api.get_cloudera_manager()
+				mgmt_service = cloudera_manager.get_service()
+
+				if verify_cloudera_manager_has_kerberos_principal(cloudera_manager):
+					wait_for_command('Stopping the cluster', cluster.stop())
+					wait_for_command('Stopping MGMT services', mgmt_service.stop())
+					enable_configure_services(cluster)
+					print("Configuring Kerberos.....!!")
+					cluster.configure_for_kerberos()
+					wait_for_generate_credentials(cloudera_manager)
+					wait_for_command('Deploying client configs.', cluster.deploy_client_config())
+					##Not doing because we are manually copying the file.....!!!
+					##wait_for_command('Deploying cluster client configs', cluster.deploy_cluster_client_config(),logger)
+					wait_for_command('Starting MGMT services', mgmt_service.start())
+					wait_for_command('Starting the cluster', cluster.start())
+				else:
+					print("Cluster does not have Kerberos admin credentials.  Exiting!")
+
+			else:
+				print("Disabling Kerberos")
+				cloudera_manager = api.get_cloudera_manager()
+				mgmt_service = cloudera_manager.get_service()
+				wait_for_command('Stopping the cluster', cluster.stop())
+				wait_for_command('Stopping MGMT services', mgmt_service.stop())
+				disable_configure_services(cluster)
+				wait_for_command('Deploying client configs.', cluster.deploy_client_config())
+				wait_for_command('Deploying cluster client configs', cluster.deploy_cluster_client_config())
+				wait_for_command('Starting MGMT services', mgmt_service.start())
+				wait_for_command('Starting the cluster', cluster.start())
+    except Exception, e:
+        print("Error in verifying Kerberos HOST. Exception:" + str(e))
+        #logger.exception(e)
+        raise Exception(e)
+
+
+if __name__ == "__main__":
+  main()

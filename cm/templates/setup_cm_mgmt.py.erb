@@ -1,0 +1,129 @@
+from cm_api.api_client import ApiResource
+from cm_api.endpoints.services import ApiServiceSetupInfo
+from cm_api.endpoints.cms import ClouderaManager
+
+CM_HOST          = "<%= @cm_hostname %>"
+CM_USER          = "<%= @cm_username%>"
+CM_PASSWORD      = "<%= @cm_password %>"
+CLUSTER_NAME     = "<%= @cluster_name %>"
+AMON_USER        = "<%= @amon_username %>"
+AMON_PASSWORD    = "<%= @amon_password%>"
+DB_TYPE          = "<%= @db_type %>"
+AMON_DB_NAME     = "<%= @amon_db_name %>"
+NAV_USER         = "<%= @nav_username %>"
+NAV_PASS         = "<%= @nav_password%>"
+NAV_DB_NAME      = "<%= @nav_db_name %>"
+RMAN_USER        = "<%= @rman_username %>"
+RMON_PASS        = "<%= @rman_password%>"
+RMAN_DB_NAME     = "<%= @rman_db_name %>"
+
+MGMT_SERVICENAME = "MGMT"
+MGMT_SERVICE_CONFIG = {
+   'zookeeper_datadir_autocreate': 'true',
+}
+MGMT_ROLE_CONFIG = {
+   'quorumPort': 2888,
+}
+AMON_ROLENAME = "ACTIVITYMONITOR"
+AMON_ROLE_CONFIG = {
+   'firehose_database_host': CM_HOST + ":3306",
+   'firehose_database_user': AMON_USER,
+   'firehose_database_password': AMON_PASSWORD,
+   'firehose_database_type': DB_TYPE,
+   'firehose_database_name': AMON_DB_NAME,
+   'firehose_heapsize': '290964392',
+}
+APUB_ROLENAME = "ALERTPUBLISHER"
+APUB_ROLE_CONFIG = { }
+ESERV_ROLENAME = "EVENTSERVER"
+ESERV_ROLE_CONFIG = {
+   'event_server_heapsize': '290964392'
+}
+HMON_ROLENAME = "HOSTMONITOR"
+HMON_ROLE_CONFIG = { }
+SMON_ROLENAME = "SERVICEMONITOR"
+SMON_ROLE_CONFIG = { }
+NAV_ROLENAME = "NAVIGATOR"
+NAV_ROLE_CONFIG = {
+   'navigator_database_host': CM_HOST + ":3306",
+   'navigator_database_user': NAV_USER,
+   'navigator_database_password': NAV_PASS',
+   'navigator_database_type': DB_TYPE,
+   'navigator_database_name': NAV_DB_NAME,
+   # 'navigator_heapsize': '215964392',
+}
+NAVMS_ROLENAME = "NAVIGATORMETADATASERVER"
+NAVMS_ROLE_CONFIG = {
+}
+RMAN_ROLENAME = "REPORTMANAGER"
+RMAN_ROLE_CONFIG = {
+   'headlamp_database_host': CM_HOST + ":3306",
+   'headlamp_database_user': RMAN_USER,
+   'headlamp_database_password': RMON_PASS,
+   'headlamp_database_type': DB_TYPE,
+   'headlamp_database_name': RMAN_DB_NAME,
+   'headlamp_heapsize': '290964392',
+}
+
+def init_cluster():
+  API = ApiResource(CM_HOST, username=CM_USER, password=CM_PASSWORD)
+  MANAGER = API.get_cloudera_manager()
+
+  try:
+    cluster = API.get_cluster(CLUSTER_NAME)
+  except Exception as e:
+    if "not found" in e.message:
+      print("Cluster '%s' not found" % CLUSTER_NAME)
+
+  try:
+    MANAGER.get_service()
+    print("Management service already exists in the cluster.")
+  except Exception as e:
+    if "Cannot find" in e.message:
+      deploy_management(MANAGER)
+      print("Created new management service")
+
+def deploy_management(manager):
+  try:
+    print("Inside deploy_management")
+    mgmt = manager.create_mgmt_service(ApiServiceSetupInfo())
+
+    # Create roles
+    mgmt.create_role(AMON_ROLENAME + "-1", "ACTIVITYMONITOR", CM_HOST)
+    mgmt.create_role(APUB_ROLENAME + "-1", "ALERTPUBLISHER", CM_HOST)
+    mgmt.create_role(ESERV_ROLENAME + "-1", "EVENTSERVER", CM_HOST)
+    mgmt.create_role(HMON_ROLENAME + "-1", "HOSTMONITOR", CM_HOST)
+    mgmt.create_role(SMON_ROLENAME + "-1", "SERVICEMONITOR", CM_HOST)
+    # mgmt.create_role(nav_role_name + "-1", "NAVIGATOR", CM_HOST)
+    # mgmt.create_role(navms_role_name + "-1", "NAVIGATORMETADATASERVER", CM_HOST)
+    # mgmt.create_role(rman_role_name + "-1", "REPORTSMANAGER", CM_HOST)
+
+    # now configure each role
+    for group in mgmt.get_all_role_config_groups():
+      if group.roleType == "ACTIVITYMONITOR":
+        group.update_config(AMON_ROLE_CONFIG)
+      elif group.roleType == "ALERTPUBLISHER":
+        group.update_config(APUB_ROLE_CONFIG)
+      elif group.roleType == "EVENTSERVER":
+        group.update_config(ESERV_ROLE_CONFIG)
+      elif group.roleType == "HOSTMONITOR":
+        group.update_config(HMON_ROLE_CONFIG)
+      elif group.roleType == "SERVICEMONITOR":
+        group.update_config(SMON_ROLE_CONFIG)
+      # elif group.roleType == "NAVIGATOR":
+      #   group.update_config(NAV_ROLE_CONFIG)
+      # elif group.roleType == "NAVIGATORMETADATASERVER":
+      #   group.update_config(NAVMS_ROLE_CONFIG)
+      # elif group.roleType == "REPORTSMANAGER":
+      #   group.update_config(RMAN_ROLE_CONFIG)
+
+    print("Starting Management services")
+    mgmt.start().wait()
+    print("Deployed CM management service to run on %s" % CM_HOST)
+    return mgmt
+  except Exception, e:
+    print("Error in depoly Cloudera Management. Exception:" + str(e))
+    raise Exception(e)
+
+# MAIN
+init_cluster()

@@ -9,21 +9,24 @@ class cm::agent (
   #  ensure => installed,
   #  require => Package['cloudera-manager-agent'],
  # }
+
+  file { '/etc/cloudera-scm-agent/config.ini':
+    ensure => present,
+    owner => 'root',
+    group => 'root',
+    mode => '0644',
+    content => template('cm/agent-config.ini.erb'),
+    require => Service['cloudera-scm-agent'],
+    #notify  => Service['cloudera-scm-agent'],
+    #require => Package['cloudera-manager-agent'],
+  }
   service { 'cloudera-scm-agent':
     ensure => $agent_ensure,
     enable => $agent_enable,
     hasrestart => true,
     hasstatus  => true,
     require    => Package['cloudera-manager-agent']
+    #require    => File['/etc/cloudera-scm-agent/config.ini'],
     # pattern => 'cloudera',
-  }
-  file { '/etc/cloudera-scm-agent/config.ini':
-    ensure => file,
-    owner => 'root',
-    group => 'root',
-    mode => '0644',
-    content => template('cm/agent-config.ini.erb'),
-    before => Service['cloudera-scm-agent'],
-    notify => Service['cloudera-scm-agent']
   }
 }

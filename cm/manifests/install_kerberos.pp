@@ -1,11 +1,11 @@
-class kerberos(
+class cm::install_kerberos(
   $kdc_hostname= $cm::params::kdc_hostname,
   $realm_caps= $cm::params::realm_caps,
   $realm_in_small = $cm::params::realm_in_small,
 
  ) {
-   require java
-  file { '/usr/java/$java_version/jre/lib/security/jce_policy-8.zip':
+  # require java
+  file { '/usr/java/jdk1.8.0_151/jre/lib/security/jce_policy-8.zip':
     ensure => 'present',
     owner  => 'root',
     group  => 'root',
@@ -14,10 +14,11 @@ class kerberos(
     before => Exec['AES-256 encryption for Kerberos tickets']
   }
   Exec { 'AES-256 encryption for Kerberos tickets':
-    command => 'yum -y insatll unzip && unzip jce_policy-8.zip',
-    path => '/bin'
-    cwd => '/usr/java/$java_version/jre/lib/security/'
-    require => File['/usr/java/$java_version/jre/lib/security/jce_policy-8.zip'],
+    command => 'yum -y install unzip && unzip jce_policy-8.zip',
+    unless => 'ls /usr/java/jdk1.8.0_151/jre/lib/security/UnlimitedJCEPolicyJDK8',
+    path => '/bin',
+    cwd => '/usr/java/jdk1.8.0_151/jre/lib/security/',
+    require => File['/usr/java/jdk1.8.0_151/jre/lib/security/jce_policy-8.zip'],
   }
   Exec {
     path => ["/bin/", "/sbin/", "/usr/bin/", "/usr/sbin/"]

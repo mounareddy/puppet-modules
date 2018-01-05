@@ -10,18 +10,17 @@ class cm::cluster_template (
   $mysql_hostname = $cm::params::mysql_hostname,
   $hive_metastore_password = $cm::params::hive_metastore_password,
   ){
-    file { '/root/cluster-template.json'
+    file { '/root/cluster-template.json':
        ensure => 'present',
        owner  => 'root',
        group  => 'root',
        mode   => '644',
        content => template('cm/cluster-template.json.erb')
     }
-    exec { "importing the cluster to a new cluster"
-      command => "curl -X POST -H "Content-Type: application/json" -d @cluster-template.json http://${cm_username}:${cm_password}@${cm_hostname}:${cm_port}/api/v12/cm/importClusterTemplate",
+    exec { "importing the cluster to a new cluster":
+      command => "curl -X POST -H \"Content-Type: application/json\" -d @cluster-template.json http://${cm_username}:${cm_password}@${cm_hostname}:${cm_port}/api/v12/cm/importClusterTemplate",
       cwd     => '/root',
       path    => '/bin',
       require => File['/root/cluster-template.json'],
     }
-
 }

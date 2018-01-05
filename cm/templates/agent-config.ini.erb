@@ -18,7 +18,7 @@ server_port=<%= @server_port %>
 #              print socket.getfqdn(), \
 #                    socket.gethostbyname(socket.getfqdn())'
 #
-# listening_hostname=
+listening_hostname= <%= scope.lookupvar('::fqdn') %>
 
 # An alternate hostname to report as the hostname for this host in CM.
 # Useful when this agent is behind a load balancer or proxy and all

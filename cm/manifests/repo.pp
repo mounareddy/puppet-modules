@@ -1,10 +1,3 @@
-# == Class: scm::repo
-#
-# This class install repositories required for cloudera manager
-# === Requires:
-#
-# puppetlabs-apt
-
 class cm::repo (
   $cm_reposerver = $cm::params::cm_reposerver,
 ) inherits cm::params {
@@ -18,7 +11,7 @@ class cm::repo (
   'CentOS', 'RedHat': {
   yumrepo { 'cloudera-manager':
         descr          => 'Cloudera Manager',
-        enabled        => 1,
+        #enabled        => 1,
         gpgcheck       => 1,
         gpgkey         => "${cm_reposerver}${cm::params::cm_gpgkey}",
         baseurl        => "${cm_reposerver}${cm::params::cm_yumpath}",
