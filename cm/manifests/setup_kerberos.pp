@@ -27,4 +27,3 @@ class cm::setup_kerberos(
     path => '/bin/',
     cwd  => '/root/'
   }
-}

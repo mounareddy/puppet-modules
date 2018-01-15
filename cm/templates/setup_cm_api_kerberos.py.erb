@@ -7,8 +7,6 @@ from cm_api.endpoints.types import ApiCommand
 from threading import Thread
 from cm_api.endpoints.cms import ClouderaManager
 
-#logger = ctologger.getCdhLogger()
-
 CM_HOST = "<%= @cm_hostname %>"
 CM_USER = "<%= @cm_username %>"
 CM_PASSWORD = "<%= @cm_password %>"
@@ -66,7 +64,7 @@ def verify_cloudera_manager_has_kerberos_principal(cloudera_manager):
                 cm_configs = cloudera_manager.get_config()
                 # If the KDC host and security realm are set, this is a good indicator that the Kerberos
                 # adminstrative principal has been imported.
-                print cm_configs
+                #print cm_configs
                 if 'KDC_HOST' in cm_configs and 'SECURITY_REALM' in cm_configs:
                         return True
 	        return False

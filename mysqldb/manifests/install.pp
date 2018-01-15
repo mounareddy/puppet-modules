@@ -3,7 +3,11 @@
 # requires puppet module install maestrodev-wget --version 1.7.3
 
 class mysqldb::install {
-
+  exec { "install wget::fetch":
+  command => "puppet module install maestrodev-wget --version 1.7.3",
+  path    => '/opt/puppetlabs/bin'
+  before  => Wget::Fetch['mysql-server'],
+  }
   wget::fetch { 'mysql-server':
     source  => "https://dev.mysql.com/get/mysql57-community-release-el7-11.noarch.rpm",
     destination => '/root/',

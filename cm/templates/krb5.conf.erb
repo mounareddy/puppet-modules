@@ -1,27 +1,18 @@
-edit the realm name in the file to match with your domain name
-# Configuration snippets may be placed in this directory as well
-includedir /etc/krb5.conf.d/
-
-[logging]
- default = FILE:/var/log/krb5libs.log
- kdc = FILE:/var/log/krb5kdc.log
- admin_server = FILE:/var/log/kadmind.log
-
 [libdefaults]
- dns_lookup_realm = false
- ticket_lifetime = 24h
- renew_lifetime = 7d
- forwardable = true
- rdns = false
- default_realm =<%= @realm_caps %>
- default_ccache_name = KEYRING:persistent:%{uid}
-
+default_realm = <%= @realm_caps %>
+dns_lookup_kdc = false
+dns_lookup_realm = false
+ticket_lifetime = 86400
+renew_lifetime = 604800
+forwardable = true
+default_tgs_enctypes = rc4-hmac aes256-cts aes128-cts
+default_tkt_enctypes = rc4-hmac aes256-cts aes128-cts
+permitted_enctypes = rc4-hmac aes256-cts aes128-cts
+udp_preference_limit = 1
+kdc_timeout = 3000
 [realms]
- <%= @realm_caps %>  = {
-  kdc =<%= @kdc_hostanme %>
-  admin_server =<%= @kdc_hostname %>
- }
-
+<%= @realm_caps %> = {
+kdc = <%= @kdc_hostname %>
+admin_server = <%= @kdc_hostname %>
+}
 [domain_realm]
- .<%= @realm_in_small %> = <%= @realm_caps %>
-  <%= @realm_in_small %> = <%= @realm_caps %>

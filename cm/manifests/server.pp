@@ -7,6 +7,7 @@ class cm::server (
   $service_enable = $cm::params::service_enable,
 )inherits cm::params {
   require mysqldb
+
   package { 'cloudera-manager-server':
       ensure => installed,
   }
@@ -18,6 +19,8 @@ class cm::server (
     enable     => $service_enable,
     hasrestart => true,
     hasstatus  => true,
+    status     => 'service cloudera-scm-server status | grep "active"',
+    status     => 'service cloudera-scm-server status',
     require    => Package["cloudera-manager-server"],
   }
   #Preparing a Cloudera Manager Server External Database
@@ -25,10 +28,12 @@ class cm::server (
   exec { 'scm_prepare_database':
     command => "/usr/share/cmf/schema/scm_prepare_database.sh ${db_type} ${database_name} ${db_user} ${db_pass} ",
     creates => '/etc/cloudera-scm-server/.scm_prepare_database',
+    unless  => 'ls /etc/cloudera-scm-server | grep db.properties',
     before  => Service["cloudera-scm-server"],
+    path => '/usr/bin:/usr/sbin:/bin:/usr/local/bin',
   }
   #adding spark to the cluster
-  file {'/opt/cloudera/csd/SPARK2_ON_YARN-2.2.0.cloudera1.jira':
+  file {'/opt/cloudera/csd/SPARK2_ON_YARN-2.2.0.cloudera1.jar':
     ensure => 'present',
     owner  => 'cloudera-scm',
     group  => 'cloudera-scm',

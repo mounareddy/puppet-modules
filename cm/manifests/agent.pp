@@ -25,6 +25,7 @@ class cm::agent (
     enable => $agent_enable,
     hasrestart => true,
     hasstatus  => true,
+    status     => '/sbin/service cloudera-scm-agent status | /bin/grep "active"',
     require    => Package['cloudera-manager-agent']
     #require    => File['/etc/cloudera-scm-agent/config.ini'],
     # pattern => 'cloudera',
