@@ -20,7 +20,6 @@ class cm::server (
     hasrestart => true,
     hasstatus  => true,
     status     => 'service cloudera-scm-server status | grep "active"',
-    status     => 'service cloudera-scm-server status',
     require    => Package["cloudera-manager-server"],
   }
   #Preparing a Cloudera Manager Server External Database

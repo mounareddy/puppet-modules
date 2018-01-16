@@ -1,7 +1,7 @@
 class cm::setup_kerberos(
   $cm_hostname = $cm::params::cm_hostname,
   $cm_username = $cm::params::cm_username,
-  $cm_password = $cm_password,
+  $cm_password = $cm::params::cm_password,
   $cluster_name = $cm::params::cluster_name,
   $cdh_version  = $cm::params::cdh_version,
   $cdh_full_version = $cm::params::cdh_full_version,
@@ -13,8 +13,8 @@ class cm::setup_kerberos(
   $ssh_user     = $cm::params::ssh_user,
   $cloudera_principal_password = $cm::params::cloudera_principal_password,
   $hbase_master_node  = $cm::params::hbase_master_node,
-  )inherits params {
-  file{ '/root/cm_api_kerberos.py':
+  )inherits cm::params {
+  file{ '/root/setup_cm_api_kerberos.py':
     ensure => 'present',
     owner  => 'root',
     group  => 'root',

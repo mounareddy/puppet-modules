@@ -13,7 +13,7 @@ class cm::management_services (
   $rman_username = $cm::params::rman_username,
   $rman_password = $cm::params::rman_password,
   $rman_db_name  = $cm::params::rman_db_name,
-  )inherits params{
+  )inherits cm::params{
   file{ '/root/setup_cm_mgmt.py':
     ensure => 'present',
     owner  => 'root',
